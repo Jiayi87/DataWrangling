@@ -1,0 +1,490 @@
+---
+title: "Zhang_jz691_Final Project"
+author: "Jiayi Zhang"
+date: "April 27, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(lubridate)
+library(rvest)
+library(stringr)
+library(xml2)
+library(readr)
+library(stringr)
+library(tidytext)
+library(knitr)
+```
+
+###the first data set: the situation of coronavirus in U.S.
+
+```{r}
+corona <- "https://www.worldometers.info/coronavirus/country/us/" %>%
+  read_html() %>% html_nodes("table") %>%.[[1]] %>%
+  html_table(fill = TRUE)
+corona$TotalCases <- corona$TotalCases %>% str_replace_all(",","") %>% as.numeric()
+corona$TotalDeaths<- corona$TotalDeaths %>% str_replace_all(",","") %>% as.numeric()
+corona 
+```
+
+###draw the map
+```{r}
+corona1<- corona$USAState<- corona$USAState%>% tolower()
+corona1<-corona %>% select(USAState,TotalCases) %>% rename(region=USAState, value = TotalCases)
+
+library(choroplethr)
+library(choroplethrMaps)
+state_choropleth(corona1,title = "The total cases of Coronavirus of states",legend = "Number of total cases in states")
+
+
+corona1
+
+```
+
+###select the most serious regions (top 7) and analyze
+```{r}
+
+corona2 <-corona1 %>% filter(region!= "usa total"& region!= "total:") %>% arrange(desc(value)) %>%
+  head(7) 
+  
+corona2
+plot1 <- ggplot(corona2, aes(x = reorder(factor(region),value), y = value)) + geom_bar(stat = "identity",fill="purple") + geom_point() + geom_line() + labs(x= "Region", y= "number of cases", title='The top seven most servere infection districts')
+plot1
+
+
+```
+
+######Deal with the second data set
+
+
+###The farm market (whole data)
+```{r}
+
+fmarket<-read.csv("C:/Users/JIAYI ZHANG/Desktop/DATA PROJECT/fmarket.csv")
+fmarket
+```
+
+#see the distribution of farm markets in each state
+```{r}
+count_fmarket<-fmarket%>%
+  group_by(State) %>%
+  summarise(Count=n(),na.rm=TRUE)
+
+count_fmarket$State <- count_fmarket$State %>% tolower()
+count_fmarket
+
+library(choroplethr)
+library(choroplethrMaps)
+count1<-count_fmarket %>% select(State,Count) %>% rename(region=State, value = Count)
+
+state_choropleth(count1,title = "The distribution of farm market in U.S.States",legend = "Number of farm markets in states")
+
+count1
+
+
+```
+
+
+#since the data in the season column is messy, we need to deal with the data.
+##deal with the options: use '1' represent Yes(which means it has in the farm market); and use '0' represent No (which means the market doesn't have it). 
+
+
+```{r}
+# set all Yes to 1, No to 0
+# set all Y to 1, N to 0
+fmarket$Credit <- ifelse(fmarket$Credit == "Y",1,0)
+fmarket$WIC <- ifelse(fmarket$WIC == "Y",1,0)
+fmarket$WICcash <- ifelse(fmarket$WICcash == "Y",1,0)
+fmarket$SFMNP <- ifelse(fmarket$SFMNP == "Y",1,0)
+fmarket$SNAP <- ifelse(fmarket$SNAP == "Y",1,0)
+fmarket$Organic <- ifelse(fmarket$Organic == "Y",1,0)
+fmarket$Bakedgoods <- ifelse(fmarket$Bakedgoods == "Y",1,0)
+fmarket$Cheese <- ifelse(fmarket$Cheese == "Y",1,0)
+fmarket$Crafts <- ifelse(fmarket$Crafts == "Y",1,0)
+fmarket$Flowers <- ifelse(fmarket$Flowers == "Y",1,0)
+fmarket$Eggs <- ifelse(fmarket$Eggs == "Y",1,0)
+fmarket$Seafood <- ifelse(fmarket$Seafood == "Y",1,0)
+fmarket$Herbs <- ifelse(fmarket$Herbs == "Y",1,0)
+fmarket$Vegetables <- ifelse(fmarket$Vegetables == "Y",1,0)
+fmarket$Honey <- ifelse(fmarket$Honey == "Y",1,0)
+fmarket$Jams <- ifelse(fmarket$Jams == "Y",1,0)
+fmarket$Maple <- ifelse(fmarket$Maple == "Y",1,0)
+fmarket$Meat <- ifelse(fmarket$Meat == "Y",1,0)
+fmarket$Nursery <- ifelse(fmarket$Nursery == "Y",1,0)
+fmarket$Nuts <- ifelse(fmarket$Nuts == "Y",1,0)
+fmarket$Plants <- ifelse(fmarket$Plants == "Y",1,0)
+fmarket$Poultry <- ifelse(fmarket$Poultry == "Y",1,0)
+fmarket$Prepared <- ifelse(fmarket$Prepared == "Y",1,0)
+fmarket$Soap <- ifelse(fmarket$Soap == "Y",1,0)
+fmarket$Trees <- ifelse(fmarket$Trees == "Y",1,0)
+fmarket$Wine <- ifelse(fmarket$Wine == "Y",1,0)
+fmarket$Coffee <- ifelse(fmarket$Coffee == "Y",1,0)
+fmarket$Beans <- ifelse(fmarket$Beans == "Y",1,0)
+fmarket$Fruits <- ifelse(fmarket$Fruits == "Y",1,0)
+fmarket$Grains <- ifelse(fmarket$Grains == "Y",1,0)
+fmarket$Juices <- ifelse(fmarket$Juices == "Y",1,0)
+fmarket$Mushrooms <- ifelse(fmarket$Mushrooms == "Y",1,0)
+fmarket$PetFood <- ifelse(fmarket$PetFood == "Y",1,0)
+fmarket$Tofu <- ifelse(fmarket$Tofu == "Y",1,0)
+fmarket$WildHarvested <- ifelse(fmarket$WildHarvested == "Y",1,0)
+
+```
+
+###acoording to our first dataset, we selected the seven severe infection region to analyze as fmarket1
+```{r}
+fmarket1 <- fmarket %>% filter(State == "New York" | State == "New Jersey" | State == "Massachusetts" | State== "Illinois" |State == "California"| State == "Pennsylvania"| State == "Michigan") %>% group_by(State) %>% mutate(selectedRegion = State)
+fmarket1
+
+```
+
+##deal with the date in seasons
+```{r}
+
+# splite SeasonOne Month-Day-Year
+fmarketSplitSeasonOne<-separate(fmarket1,Season1Date,c("FirstSeasonOne","LastSeasonOne"),sep="to")
+fmarketSplitSeasonOneDetail<-separate(fmarketSplitSeasonOne,LastSeasonOne, c("LastSeasonOnemonth","LastSeasonOneDay","LastSeasonOneYear"),sep="/")
+
+# splite SeasonTwo Month-Day-Year
+fmarketSplitSeasonTwo<-separate(fmarketSplitSeasonOneDetail,Season2Date,c("FirstSeasonTwo","LastSeasonTwo"),sep="to")
+fmarketSplitSeasonTwoDetail<-separate(fmarketSplitSeasonTwo,LastSeasonTwo, c("LastSeasonTwomonth","LastSeasonTwoDay","LastSeasonTwoYear"),sep="/")
+
+# splite SeasonThree Month-Day-Year
+fmarketSplitSeasonThree<-separate(fmarketSplitSeasonTwoDetail,Season3Date,c("FirstSeasonThree","LastSeasonThree"),sep="to")
+fmarketSplitSeasonThreeDetail<-separate(fmarketSplitSeasonThree,LastSeasonThree, c("LastSeasonThreemonth","LastSeasonThreeDay","LastSeasonThreeYear"),sep="/")
+
+# splite SeasonFour Month-Day-Year
+fmarketSplitSeasonFour<-separate(fmarketSplitSeasonThreeDetail,Season4Date,c("FirstSeasonFour","LastSeasonFour"),sep="to")
+fmarketSplitSeasonFourDetail<-separate(fmarketSplitSeasonFour,LastSeasonFour, c("LastSeasonFourmonth","LastSeasonFourDay","LastSeasonFourYear"),sep="/")
+
+fmarketSplitSeasonFourDetail
+
+
+
+
+```
+##show the change trend from  2011 to 2019
+```{r}
+fmarketYeardf1<-na.omit(select(fmarketSplitSeasonFourDetail,LastSeasonOneYear,State))
+fmarketYeardf2<-na.omit(select(fmarketSplitSeasonFourDetail,LastSeasonTwoYear,State))
+fmarketYeardf3<-na.omit(select(fmarketSplitSeasonFourDetail,LastSeasonThreeYear,State))
+fmarketYeardf4<-na.omit(select(fmarketSplitSeasonFourDetail,LastSeasonFourYear,State))
+
+colnames(fmarketYeardf1) <- c("Year","State")
+colnames(fmarketYeardf2) <- c("Year","State")
+colnames(fmarketYeardf3) <- c("Year","State")
+colnames(fmarketYeardf4) <- c("Year","State")
+
+
+fmarketbind<-rbind(fmarketYeardf1,fmarketYeardf2,fmarketYeardf3,fmarketYeardf4)
+
+fmarketFinal <- fmarketbind[fmarketbind$Year%in% c(2010:2019),]
+fmarketFinal
+
+```
+
+##draw the growth trend
+```{r}
+LineMarketdf1 <- fmarketFinal %>%
+  group_by(Year,State) %>%
+  summarise(Count=n()) %>% filter(State == "New York" | State == "New Jersey" | State == "Massachusetts" | State== "Illinois" |State == "California"| State == "Pennsylvania"| State == "Michigan")
+LineMarketdf1
+
+
+ggplot(LineMarketdf1, aes(as.character(Year),Count, group=State, na.rm=TRUE,color=factor(State)))+
+  geom_line()+ geom_point()+xlab("Year") + geom_text(aes(label=Count),vjust=-1,color="black", alpha=5)+
+   labs(title = "Changes of Total Farm Market Number in the selected Region") +ylab("Total Number of Farm Market") +ylim(0,110)+theme(title=element_text(size=14),
+        axis.title.x=element_text(size=14),
+        axis.title.y=element_text(size=14))
+
+```
+
+##the products provided situation in the seven selected regions
+
+```{r}
+
+library(ggplot2) 
+library(lubridate) 
+theme_set(theme_bw())
+library(reshape2)
+
+fmarketproduce<-fmarketSplitSeasonFourDetail[c(41:70,72)]
+fmarketproducedf <- melt(fmarketproduce)
+
+
+PreparedProduct<-c("Honey", "Jams", "Maple","Prepared")
+DailyProduct<-c("Cheese", "Eggs","Vegetables","Nuts","WildHarvested","Beans","Fruits", "Grains",
+                "Mushroom","Tofu")
+PlantsProduct<-c("Flowers","Herbs","Nursery","Plants","Trees")
+
+MeatProduct<-c("Seafood","Meat","Poultry")
+BeverageProduct <- c("Wine","Coffee","Juices")
+NonFoodProduct <- c("Crafts","Soap","PetFood")
+Organic <- c("Organic")
+
+fmarketproducedf$variable <-ifelse(fmarketproducedf$variable %in% PreparedProduct,"PreparedProduct",
+       ifelse((fmarketproducedf$variable %in% DailyProduct),"DailyProduct",
+            ifelse((fmarketproducedf$variable %in% PlantsProduct),"PlantsProduct",
+               ifelse((fmarketproducedf$variable %in% MeatProduct),"MeatProduct",
+                      ifelse(fmarketproducedf$variable %in% BeverageProduct,"BeverageProduct",
+                             ifelse(fmarketproducedf$variable %in% NonFoodProduct,"NonFoodProduct",
+                                    ifelse(fmarketproducedf$variable %in% Organic,"Organic","Bakedgoods")))))))
+
+fmarketproducedf1 <- fmarketproducedf %>%
+  group_by(variable) %>%
+  summarise(value = sum(value), na.rm = TRUE)
+
+fmarketproducedf2<-arrange(fmarketproducedf1,value)
+fmarketproducedf2$variable <- factor(fmarketproducedf2$variable, levels = fmarketproducedf2$variable)
+
+
+  ggplot(fmarketproducedf2, aes(x = variable, y =value)) + coord_flip() + geom_bar(aes(fill = value),stat = "identity")+
+     geom_text(aes(label=value),hjust = 1.3,color="white")+
+  labs(title = "The Total Number of Different type of Products Selling",
+       caption = "Source: fmarket.csv") + xlab("Type of Product") +ylab("Total Number of Each Product")+theme(title=element_text(size=14),
+        axis.title.x=element_text(size=14),
+        axis.title.y=element_text(size=14))
+
+```
+
+###the overall situation in all farm markets in U.S.
+
+###we need change the parameters to all farm markets in US
+
+```{r}
+# catelog Five big region #
+NorthEast<-c("Maine","New Hampshire","Vermont","Massachusetts","Rhode Island","Connecticut",
+            "New York","New Jersey","Pennsylvania")
+
+MidWest<-c("Ohio", "Michigan", "Indiana", "Wisconsin", "Illinois", "Minnesota", "Iowa",
+           "Missouri", "North Dakota", "South Dakota", "Nebraska", "Kansas")
+
+South<-c("Delaware","Maryland","District of Columbia","Virginia","West Virginia",
+         "North Carolina","South Carolina","Georgia","Florida","Kentucky","Tennessee",
+         "Mississippi","Alabama","Oklahoma","Texas","Arkansas","Louisiana")
+
+West<-c("Idaho","Montana","Wyoming","Nevada","Utah","Colorado","Arizona","New Mexico",
+        "Alaska","Washington","Oregon","California","Hawaii")
+
+fmarket$Geographical<-ifelse(fmarket$State %in% NorthEast,"NorthEast",
+       ifelse((fmarket$State %in% MidWest),"MidWest",
+            ifelse((fmarket$State %in% South),"South",
+               ifelse((fmarket$State %in% West),"West","Other"))))
+
+# splite SeasonOne Month-Day-Year
+fmarketSplitSeasonOne<-separate(fmarket,Season1Date,c("FirstSeasonOne","LastSeasonOne"),sep="to")
+fmarketSplitSeasonOneDetail<-separate(fmarketSplitSeasonOne,LastSeasonOne, c("LastSeasonOnemonth","LastSeasonOneDay","LastSeasonOneYear"),sep="/")
+fmarketSplitSeasonOneDetail
+# splite SeasonTwo Month-Day-Year
+fmarketSplitSeasonTwo<-separate(fmarketSplitSeasonOneDetail,Season2Date,c("FirstSeasonTwo","LastSeasonTwo"),sep="to")
+fmarketSplitSeasonTwoDetail<-separate(fmarketSplitSeasonTwo,LastSeasonTwo, c("LastSeasonTwomonth","LastSeasonTwoDay","LastSeasonTwoYear"),sep="/")
+fmarketSplitSeasonTwo
+# splite SeasonThree Month-Day-Year
+fmarketSplitSeasonThree<-separate(fmarketSplitSeasonTwoDetail,Season3Date,c("FirstSeasonThree","LastSeasonThree"),sep="to")
+fmarketSplitSeasonThreeDetail<-separate(fmarketSplitSeasonThree,LastSeasonThree, c("LastSeasonThreemonth","LastSeasonThreeDay","LastSeasonThreeYear"),sep="/")
+
+# splite SeasonFour Month-Day-Year
+fmarketSplitSeasonFour<-separate(fmarketSplitSeasonThreeDetail,Season4Date,c("FirstSeasonFour","LastSeasonFour"),sep="to")
+fmarketSplitSeasonFourDetail<-separate(fmarketSplitSeasonFour,LastSeasonFour, c("LastSeasonFourmonth","LastSeasonFourDay","LastSeasonFourYear"),sep="/")
+fmarketSplitSeasonFourDetail
+
+library(ggplot2) 
+library(lubridate) 
+theme_set(theme_bw())
+library(reshape2)
+
+fmarketproduce<-fmarketSplitSeasonFourDetail[c(41:70,72)]
+fmarketproducedf <- melt(fmarketproduce)
+
+
+PreparedProduct<-c("Honey", "Jams", "Maple","Prepared")
+DailyProduct<-c("Cheese", "Eggs","Vegetables","Nuts","WildHarvested","Beans","Fruits", "Grains",
+                "Mushroom","Tofu")
+PlantsProduct<-c("Flowers","Herbs","Nursery","Plants","Trees")
+
+MeatProduct<-c("Seafood","Meat","Poultry")
+BeverageProduct <- c("Wine","Coffee","Juices")
+NonFoodProduct <- c("Crafts","Soap","PetFood")
+Organic <- c("Organic")
+
+fmarketproducedf$variable <-ifelse(fmarketproducedf$variable %in% PreparedProduct,"PreparedProduct",
+       ifelse((fmarketproducedf$variable %in% DailyProduct),"DailyProduct",
+            ifelse((fmarketproducedf$variable %in% PlantsProduct),"PlantsProduct",
+               ifelse((fmarketproducedf$variable %in% MeatProduct),"MeatProduct",
+                      ifelse(fmarketproducedf$variable %in% BeverageProduct,"BeverageProduct",
+                             ifelse(fmarketproducedf$variable %in% NonFoodProduct,"NonFoodProduct",
+                                    ifelse(fmarketproducedf$variable %in% Organic,"Organic","Bakedgoods")))))))
+
+fmarketproducedf1 <- fmarketproducedf %>%
+  group_by(variable) %>%
+  summarise(value = sum(value), na.rm = TRUE)
+
+fmarketproducedf2<-arrange(fmarketproducedf1,value)
+fmarketproducedf2$variable <- factor(fmarketproducedf2$variable, levels = fmarketproducedf2$variable)
+
+
+  ggplot(fmarketproducedf2, aes(x = variable, y =value)) + coord_flip() + geom_bar(aes(fill = value),stat = "identity")+
+     geom_text(aes(label=value),hjust = 1.3,color="white")+
+  labs(title = "The Total Number of Different type of Products Selling in U.S.") + xlab("Type of Product") +ylab("Total Number of Each Product")+theme(title=element_text(size=14),
+        axis.title.x=element_text(size=14),
+        axis.title.y=element_text(size=14))
+
+```
+
+
+###to focus on the daily product, list each of them 
+
+```{r}
+fmarketproduce<-fmarket[c(29:58,60)]
+fmarketproducedf <- melt(fmarketproduce)
+DailyProductdf <- filter(fmarketproducedf,fmarketproducedf$variable == "Cheese"| fmarketproducedf$variable == "Eggs"| fmarketproducedf$variable =="Vegetables"| fmarketproducedf$variable =="Nuts"| fmarketproducedf$variable =="WildHarvested"| fmarketproducedf$variable =="Beans"| fmarketproducedf$variable =="Fruits"| fmarketproducedf$variable == "Grains"|fmarketproducedf$variable =="Mushroom"|fmarketproducedf$variable =="Tofu")
+
+DailyProductdf1 <- melt(DailyProductdf)
+
+colnames(DailyProductdf1) <- c("Geographical","Type","variable","value")
+
+fmarketproducedf1 <- DailyProductdf1 %>%
+  group_by(Geographical,Type) %>%
+  summarize(value = sum(value),na.rm = TRUE) 
+
+
+
+ggplot(fmarketproducedf1, aes(fill=Geographical,x =reorder(factor(Type),value),y=value)) + geom_bar(position="stack", stat="identity") +
+  labs(title = "Daily Product in each Geographic Region")+xlab("Daily Product Type")+
+       ylab("Total number")+theme(title=element_text(size=14),
+        axis.title.x=element_text(size=14),
+        axis.title.y=element_text(size=14))
+
+fmarketproducedf2 <- DailyProductdf1 %>%
+  group_by(Type) %>%
+  summarize(value = sum(value),na.rm = TRUE) 
+
+fmarketproducedf2$pct <- round(fmarketproducedf2$value/sum(fmarketproducedf2$value)*100)
+fmarketproducedf2pct <- paste(fmarketproducedf2$Type, " ", fmarketproducedf2$pct, "%", sep="") 
+pie(fmarketproducedf2$value, labels=fmarketproducedf2pct,   
+    main="Percentage of Products in Daily Product")
+
+
+```
+
+##see the geographic distribution (use to see the situations, not include in the report)
+```{r}
+fmarketCount<-fmarket%>%
+  group_by(Geographical) %>%
+  summarise(Count=n(),na.rm=TRUE)
+
+fmarketOrder<-arrange(fmarketCount, desc(Count))
+fmarketOrder$Geographical <- factor(fmarketOrder$Geographical, levels = fmarketOrder$Geographical)
+
+
+ggplot(fmarketOrder,aes(x=Geographical, y=Count))+
+  geom_bar(stat="identity",fill = "green3")+
+  geom_text(aes(label=Count),vjust=-0.5,color="black", alpha=.7)+ylim(0,3000)+
+  labs(title = "The Total Number of Farm Market by geographic region in U.S.") + xlab("Geographic Region") +ylab("Total Number of Farm Market")+theme(title=element_text(size=14),
+        axis.title.x=element_text(size=14),
+        axis.title.y=element_text(size=14))
+
+fmarketOrder$pct <- round(fmarketOrder$Count/sum(fmarketOrder$Count)*100)
+fmarketOrderdf1 <- paste(fmarketOrder$Geographical, " ", fmarketOrder$pct, "%", sep="") 
+pie(fmarketOrder$Count, labels=fmarketOrderdf1,   
+    main="Percentage of Farm Market in Each Geographic region") 
+```
+
+###all products situatio in each Geograhic region
+```{r}
+fmarketproducedf3 <- fmarketproducedf %>%
+  group_by(variable,Geographical) %>%
+  summarise(count= sum(value), na.rm = TRUE)
+
+fmarketproducedf4<-arrange(fmarketproducedf3,count)
+
+  ggplot(fmarketproducedf3, aes(x =reorder(factor(variable),count) , y =count)) + coord_flip() + geom_bar(aes(fill = Geographical),stat = "identity")+
+  labs(title = "The Products in Each Region of America") + xlab("Type of Product") +ylab("Total Number of product in each region")+theme(title=element_text(size=14),
+        axis.title.x=element_text(size=14),
+        axis.title.y=element_text(size=14))
+```
+
+###The payment method in each region and the overall situation
+
+```{r}
+library(reshape2)
+
+
+fmarketPaydf1 <- fmarket %>%
+  group_by(Geographical) %>%
+  summarize(Credit = sum(Credit,na.rm=TRUE),WIC = sum(WIC,na.rm=TRUE),WICcash = sum(WICcash,na.rm=TRUE),
+            SFMNP = sum(SFMNP,na.rm=TRUE),SNAP = sum(SNAP,na.rm=TRUE)) 
+
+
+fmarketPaydf2 <-melt(fmarketPaydf1,
+                     id.vars = c('Geographical'),
+                     variable.name='payment_type',
+                      value.name='total_payment')
+
+ggplot(fmarketPaydf2, aes(fill=Geographical,x =reorder(factor(payment_type),total_payment),y=total_payment)) + geom_bar(position="stack", stat="identity") +
+  labs(title = "Payment in each Region")+ ylim(0,5600)+xlab("Payment Type")+
+       ylab("Total number")+theme(title=element_text(size=14),
+        axis.title.x=element_text(size=14),
+        axis.title.y=element_text(size=14))
+
+###overall histogram plot
+fmarketPaydf3 <- fmarketPaydf1 %>%
+  summarize(Credit = sum(Credit,na.rm=TRUE),WIC = sum(WIC,na.rm=TRUE),WICcash = sum(WICcash,na.rm=TRUE),
+            SFMNP = sum(SFMNP,na.rm=TRUE),SNAP = sum(SNAP,na.rm=TRUE)) 
+
+fmarketPaydf4 <-melt(fmarketPaydf3)
+fmarketPayOrder<-arrange(fmarketPaydf4, desc(value))
+fmarketPayOrder$variable <- factor(fmarketPayOrder$variable, levels = fmarketPayOrder$variable)
+
+
+ggplot(fmarketPayOrder, aes(x=variable,y=value)) + geom_bar(stat ="identity",fill = "orange",show.legend = TRUE) +
+  labs(title = "Total number of Payment")+ ylim(0,5600)+xlab("Payment Type")+geom_text(aes(label=value),hjust = 0.5,vjust = 3, color="white",alpha = 10)+theme(title=element_text(size=14),
+        axis.title.x=element_text(size=14),
+        axis.title.y=element_text(size=14))
+
+```
+
+
+
+###show the pie chart percentage of the payment in different region
+```{r}
+
+par(mfcol=c(2,2))
+
+#Percentage of Each Payment Method in MidWest Area#
+fmarketMidWest<-filter(fmarketPaydf1,Geographical == "MidWest")
+fmarketMidWestdf <- melt(fmarketMidWest)
+fmarketMidWestdf$pct <- round(fmarketMidWestdf$value/sum(fmarketMidWestdf$value)*100)
+MidWestPaypct <- paste(fmarketMidWestdf$variable, " ", fmarketMidWestdf$pct, "%", sep="") 
+pie(fmarketMidWestdf$value, labels=MidWestPaypct,   
+    main="Percentage of Payment in MidWest") 
+
+fmarketNorthEast<-filter(fmarketPaydf1,Geographical == "NorthEast")
+fmarketNorthEastdf <- melt(fmarketNorthEast)
+fmarketNorthEastdf$pct <- round(fmarketNorthEastdf$value/sum(fmarketNorthEastdf$value)*100)
+NorthEastPaypct <- paste(fmarketNorthEastdf$variable, " ", fmarketNorthEastdf$pct, "%", sep="") 
+pie(fmarketNorthEastdf$value, labels=NorthEastPaypct,   
+    main="Percentage of Payment in NorthEast") 
+
+fmarketSouth<-filter(fmarketPaydf1,Geographical == "South")
+fmarketSouthdf <- melt(fmarketSouth)
+fmarketSouthdf$pct <- round(fmarketSouthdf$value/sum(fmarketSouthdf$value)*100)
+SouthPaypct <- paste(fmarketSouthdf$variable, " ", fmarketSouthdf$pct, "%", sep="") 
+pie(fmarketSouthdf$value, labels=SouthPaypct,
+    main="Percentage of Payment in South") 
+
+fmarketWest<-filter(fmarketPaydf1,Geographical == "West")
+fmarketWestdf <- melt(fmarketWest)
+fmarketWestdf$pct <- round(fmarketWestdf$value/sum(fmarketWestdf$value)*100)
+WestPaypct <- paste(fmarketWestdf$variable, " ", fmarketWestdf$pct, "%", sep="") 
+pie(fmarketWestdf$value, labels=WestPaypct,
+    main="Percentage of Payment in West") 
+
+par(mfcol=c(1,1))
+
+``` 
